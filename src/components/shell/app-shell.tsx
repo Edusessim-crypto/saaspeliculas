@@ -84,7 +84,11 @@ export function AppShell({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface-raised)] px-3 sm:px-4">
-            <Link href="/hoje" className="lg:hidden" aria-label="FilmFlow">
+            <Link
+              href="/hoje"
+              className="inline-flex size-11 items-center justify-center -ml-1.5 lg:hidden"
+              aria-label="FilmFlow"
+            >
               <Logo showWordmark={false} />
             </Link>
 

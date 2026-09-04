@@ -117,7 +117,7 @@ export function KanbanBoard({
       onDragEnd={onDragEnd}
       onDragCancel={() => setDragging(null)}
     >
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="flex min-w-0 gap-3 overflow-x-auto pb-2">
         {KANBAN_COLUMNS.map((status) => (
           <Column
             key={status}

@@ -24,13 +24,13 @@ const buttonVariants = cva(
         link: 'text-[var(--color-accent)] underline-offset-4 hover:underline',
       },
       size: {
-        // Alvos de toque confortaveis mesmo no tamanho pequeno (§59)
-        sm: 'h-9 px-3 text-[13px] [&_svg]:size-4',
-        md: 'h-10 px-4 [&_svg]:size-4',
+        // Alvo de toque de 44px no mobile, densidade de 36px no desktop (§59, §53)
+        sm: 'h-11 px-3 text-[13px] md:h-9 [&_svg]:size-4',
+        md: 'h-11 px-4 md:h-10 [&_svg]:size-4',
         lg: 'h-11 px-5 [&_svg]:size-[18px]',
         xl: 'h-14 px-6 text-base font-semibold [&_svg]:size-5',
-        icon: 'h-9 w-9 [&_svg]:size-4',
-        'icon-lg': 'h-11 w-11 [&_svg]:size-5',
+        icon: 'size-11 md:size-9 [&_svg]:size-4',
+        'icon-lg': 'size-11 [&_svg]:size-5',
       },
       block: { true: 'w-full', false: '' },
     },

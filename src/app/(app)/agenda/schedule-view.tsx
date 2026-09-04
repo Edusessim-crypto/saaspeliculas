@@ -160,7 +160,7 @@ export function ScheduleView({
                 syncUrl({ employee: value })
               }}
             >
-              <SelectTrigger className="h-9 w-auto min-w-[150px] text-[13px]">
+              <SelectTrigger className="h-11 md:h-9 w-auto min-w-[150px] text-[13px]">
                 <SelectValue placeholder="Aplicador" />
               </SelectTrigger>
               <SelectContent>

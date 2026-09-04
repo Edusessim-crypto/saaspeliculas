@@ -94,7 +94,7 @@ export function KanbanMobile({
               aria-selected={selected}
               onClick={() => setActive(status)}
               className={cn(
-                'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 text-[13px] font-medium transition-colors',
+                'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 text-[13px] font-medium transition-colors',
                 selected
                   ? 'border-[var(--color-brand)] bg-[var(--color-brand)] text-white'
                   : 'border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] text-[var(--color-ink-muted)]',

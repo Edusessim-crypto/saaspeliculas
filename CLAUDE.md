@@ -172,7 +172,14 @@ Dark mode não é prioridade; os tokens já estão estruturados para permitir de
 ### Responsividade
 
 Regra absoluta: mobile tem decisões próprias de UX, não é "desktop comprimido".
-Testar em 320, 375, 390, 430, 768, 1024, 1280, 1440px.
+Testar em 320, 375, 390, 430, 768, 1024, 1280, 1440px — `npm run e2e:responsive`
+faz isso num Chromium real, checando overflow, elementos fora da viewport e
+alvos de toque.
+
+Alvos de toque: 44px no mobile, 36px no desktop (`h-11 md:h-9`). Vale para
+botões `sm`/`icon`, tabs, `SelectTrigger` e os gatilhos do header. Ao
+sobrescrever a altura de um componente com `className`, mantenha o par — foi
+assim que os filtros de `/agenda` e `/operacao` ficaram com 36px no celular.
 
 - `<768px`: bottom navigation, sem sidebar, cards full width, drawer vira full-screen, agenda default diária.
 - Kanban mobile: tabs de status roláveis com uma coluna por vez — **não** depender de drag-and-drop no celular.
@@ -231,7 +238,12 @@ timing/atrasos, permissões, validação e formatação. **69 testes**.
 Contra o banco real há três verificadores: `db:verify` (schema e RLS ativo),
 `db:verify:rls` (isolamento multi-tenant com usuários reais) e `db:verify:flow`
 (fluxo operacional completo). Eles usam a chave `anon` justamente para exercitar
-o RLS — a `service_role` o ignora e mascararia falhas. Não escreva testes cosméticos —
+o RLS — a `service_role` o ignora e mascararia falhas.
+
+Com o dev server no ar, `npm run e2e:responsive` e `npm run e2e:realtime`
+(Playwright). O segundo abre duas sessões simultâneas — recepção no desktop,
+aplicador no mobile — e confirma a promessa do §141: o aplicador finaliza e a
+tela da recepção muda sozinha, sem F5. Não escreva testes cosméticos —
 teste conflito de agenda, transição de status, cálculo de duração e permissões.
 
 ### Segurança
@@ -268,10 +280,9 @@ Estado atual: todos passando (build com 18 rotas, 58 testes verdes).
 
 ## Pendências
 
-1. Revisão visual de responsividade nas larguras do §159 foi feita por leitura de código, não em navegador real.
-2. `npm audit` acusa falha de `postcss` aninhado no Next 15. Corrigir exigiria subir para o Next 16 (breaking). É risco de build-time, não de runtime — decidido não mexer agora.
-3. A `service_role` trafegou por um chat durante o setup; vale rotacioná-la no painel antes de qualquer uso além de desenvolvimento.
-4. O repositório é **público**. Nunca versione `.env.local`, o ID do projeto Supabase ou qualquer chave — o `.gitignore` já cobre `.env*.local`, mas confira antes de cada commit.
+1. `npm audit` acusa falha de `postcss` aninhado no Next 15. Corrigir exigiria subir para o Next 16 (breaking). É risco de build-time, não de runtime — decidido não mexer agora.
+2. A `service_role` trafegou por um chat durante o setup; vale rotacioná-la no painel antes de qualquer uso além de desenvolvimento.
+3. O repositório é **público**. Nunca versione `.env.local`, o ID do projeto Supabase ou qualquer chave — o `.gitignore` já cobre `.env*.local`, mas confira antes de cada commit.
 
 ## Estado verificado contra o Supabase real
 
@@ -282,6 +293,8 @@ Em 04/09/2026, contra o projeto Supabase de desenvolvimento, tudo abaixo passou:
 - Seed populado: 5 usuários, 16 tipos de serviço, 12 atendimentos
 - Fluxo completo `scheduled → … → delivered` com histórico e timestamps corretos
 - 10 rotas administrativas + app do aplicador carregando com dados reais
+- Responsividade limpa nas 8 larguras do §159, em Chromium real
+- Realtime propagando em 0,6s entre duas sessões simultâneas
 - lint, typecheck, 69 testes e build (18 rotas) limpos
 
 ## Fora de escopo no MVP

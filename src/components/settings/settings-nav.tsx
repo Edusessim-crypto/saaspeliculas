@@ -31,7 +31,7 @@ export function SettingsNav() {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-3 text-[13px] font-medium transition-colors',
+              'inline-flex h-11 shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-3 text-[13px] font-medium transition-colors md:h-9',
               active
                 ? 'bg-[var(--color-brand-subtle)] text-[var(--color-brand)]'
                 : 'text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]',

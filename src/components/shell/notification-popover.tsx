@@ -72,7 +72,7 @@ export function NotificationPopover({
           aria-label={
             unread.length ? `Notificações, ${unread.length} não lidas` : 'Notificações'
           }
-          className="relative inline-flex size-9 items-center justify-center rounded-[var(--radius-control)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]"
+          className="relative inline-flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[var(--color-ink-muted)] transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] md:size-9"
         >
           <Bell className="size-[18px]" aria-hidden />
           {unread.length > 0 ? (

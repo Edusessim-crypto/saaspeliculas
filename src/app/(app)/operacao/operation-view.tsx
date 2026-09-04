@@ -102,7 +102,7 @@ export function OperationView({
       >
         <div className="flex flex-wrap items-center gap-2">
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger className="h-9 w-auto min-w-[148px] text-[13px] sm:h-9">
+            <SelectTrigger className="h-11 md:h-9 w-auto min-w-[148px] text-[13px]">
               <SelectValue placeholder="Aplicador" />
             </SelectTrigger>
             <SelectContent>
@@ -117,7 +117,7 @@ export function OperationView({
 
           {workstations.length > 0 ? (
             <Select value={workstationFilter} onValueChange={setWorkstationFilter}>
-              <SelectTrigger className="h-9 w-auto min-w-[120px] text-[13px] sm:h-9">
+              <SelectTrigger className="h-11 md:h-9 w-auto min-w-[120px] text-[13px]">
                 <SelectValue placeholder="Box" />
               </SelectTrigger>
               <SelectContent>
@@ -152,7 +152,7 @@ export function OperationView({
           />
         ) : (
           <>
-            <div className="hidden md:block">
+            <div className="hidden min-w-0 md:block">
               <KanbanBoard
                 orders={filtered}
                 role={role}

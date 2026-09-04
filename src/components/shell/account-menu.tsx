@@ -33,7 +33,7 @@ export function AccountMenu({
         <button
           type="button"
           aria-label="Menu da conta"
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-control)] p-1 transition-colors hover:bg-[var(--color-surface-hover)]"
+          className="inline-flex h-11 items-center gap-1.5 rounded-[var(--radius-control)] px-1 transition-colors hover:bg-[var(--color-surface-hover)] md:h-9"
         >
           <EmployeeAvatar name={name} color="#172554" size="sm" />
           <ChevronsUpDown className="size-3.5 text-[var(--color-ink-subtle)]" aria-hidden />

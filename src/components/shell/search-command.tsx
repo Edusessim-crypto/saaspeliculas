@@ -72,7 +72,7 @@ export function SearchCommand() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2.5 text-[13px] text-[var(--color-ink-subtle)] transition-colors hover:bg-[var(--color-surface-hover)] md:w-56 lg:w-64"
+        className="inline-flex size-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[13px] text-[var(--color-ink-subtle)] transition-colors hover:bg-[var(--color-surface-hover)] md:h-9 md:w-56 md:justify-start md:px-2.5 lg:w-64"
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="hidden md:inline">Buscar cliente, placa…</span>
