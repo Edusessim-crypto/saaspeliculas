@@ -109,6 +109,15 @@ Decisões já tomadas, não as reverta sem motivo:
 Toda mudança de status gera `status_history`. Início grava `actual_start`, conclusão
 grava `actual_end`.
 
+**O grafo existe em dois lugares e precisa mudar junto**: `TRANSITIONS` no domínio
+e `order_status_can_transition()` na migration `20260101000003`. Até essa migration
+a validação só existia no TypeScript, e um `UPDATE` direto pulava de `scheduled`
+para `delivered`. `tests/state-machine-parity.test.ts` lê o SQL e compara com o
+domínio — se divergirem, o teste quebra.
+
+Sair de um estado terminal é possível apenas via `reopen_service_order()`, restrita
+a `owner`/`manager`.
+
 ### Status na UI
 
 `STATUS_CONFIG` em [src/domain/status.ts](src/domain/status.ts) é a fonte única de
@@ -198,7 +207,15 @@ a regra.
 ### Banco
 
 Migrations versionadas em `supabase/migrations/` — nunca criar tabela pelo painel.
-20 tabelas; `service_orders` no centro.
+21 tabelas; `service_orders` no centro.
+
+Aplicação: `SUPABASE_DB_URL='postgresql://...' npm run db:migrate`. O runner
+registra o que já rodou em `schema_migrations`, então reexecutar aplica só o
+pendente. Não use `supabase db push` — exige login interativo de conta, que as
+chaves de projeto não substituem.
+
+Após qualquer migration que mexa em tabela ou policy, rode `npm run db:verify`:
+ele falha se alguma tabela ficar sem RLS ativo ou sem policy.
 
 Invariantes de modelagem:
 - `vehicle_id` é **nullable** por decisão de arquitetura: o produto precisa suportar serviços sem veículo (película arquitetônica em obra/condomínio). Não torne obrigatório.
@@ -208,8 +225,13 @@ Invariantes de modelagem:
 
 ### Testes
 
-Vitest cobre as regras críticas em `tests/`: state machine, timing/atrasos,
-permissões, validação e formatação. **58 testes**. Não escreva testes cosméticos —
+Vitest cobre as regras críticas em `tests/`: state machine, paridade com o SQL,
+timing/atrasos, permissões, validação e formatação. **69 testes**.
+
+Contra o banco real há três verificadores: `db:verify` (schema e RLS ativo),
+`db:verify:rls` (isolamento multi-tenant com usuários reais) e `db:verify:flow`
+(fluxo operacional completo). Eles usam a chave `anon` justamente para exercitar
+o RLS — a `service_role` o ignora e mascararia falhas. Não escreva testes cosméticos —
 teste conflito de agenda, transição de status, cálculo de duração e permissões.
 
 ### Segurança
@@ -246,9 +268,21 @@ Estado atual: todos passando (build com 18 rotas, 58 testes verdes).
 
 ## Pendências
 
-1. **Nada do banco jamais rodou contra um Supabase real.** As 3 migrations, o seed e o fluxo demo existem apenas em código. Requer projeto criado no Supabase e `.env.local` preenchido. É a próxima etapa do projeto.
-2. Não é repositório git — nada foi commitado.
-3. Revisão visual de responsividade nas larguras do §159 foi feita por leitura de código, não em navegador real.
+1. Revisão visual de responsividade nas larguras do §159 foi feita por leitura de código, não em navegador real.
+2. `npm audit` acusa falha de `postcss` aninhado no Next 15. Corrigir exigiria subir para o Next 16 (breaking). É risco de build-time, não de runtime — decidido não mexer agora.
+3. A `service_role` trafegou por um chat durante o setup; vale rotacioná-la no painel antes de qualquer uso além de desenvolvimento.
+4. O repositório é **público**. Nunca versione `.env.local`, o ID do projeto Supabase ou qualquer chave — o `.gitignore` já cobre `.env*.local`, mas confira antes de cada commit.
+
+## Estado verificado contra o Supabase real
+
+Em 04/09/2026, contra o projeto Supabase de desenvolvimento, tudo abaixo passou:
+
+- 5 migrations aplicadas — 21 tabelas, 46 policies, 17 triggers
+- RLS ativo em todas as tabelas; isolamento multi-tenant confirmado em 7 cenários
+- Seed populado: 5 usuários, 16 tipos de serviço, 12 atendimentos
+- Fluxo completo `scheduled → … → delivered` com histórico e timestamps corretos
+- 10 rotas administrativas + app do aplicador carregando com dados reais
+- lint, typecheck, 69 testes e build (18 rotas) limpos
 
 ## Fora de escopo no MVP
 
