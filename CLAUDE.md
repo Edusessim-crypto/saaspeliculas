@@ -251,6 +251,32 @@ teste conflito de agenda, transição de status, cálculo de duração e permiss
 `SUPABASE_SERVICE_ROLE_KEY` nunca no client — só em `scripts/seed.ts`. Nunca
 prefixe segredo com `NEXT_PUBLIC_`. Não confie apenas no frontend para permissões.
 
+## Deploy (Vercel)
+
+Produção: **https://saaspeliculas.vercel.app** — projeto `saaspeliculas`, região
+`gru1` (São Paulo).
+
+As quatro variáveis de ambiente precisam existir em Production, Preview e
+Development. **Nunca marque as `NEXT_PUBLIC_` como Secret/Sensitive**: o
+middleware roda no Edge Runtime, que não lê variáveis sensíveis, e toda
+requisição passa por ele — o site inteiro responde 500 com
+`MIDDLEWARE_INVOCATION_FAILED`. Foi exatamente o que aconteceu no primeiro
+deploy.
+
+A CLI pede o tipo explicitamente para nomes que parecem credencial:
+
+```
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production --type config --value "<valor>" --yes
+```
+
+`--type config` para as `NEXT_PUBLIC_` (são públicas por definição — quem as
+protege é o RLS); `--type secret` só para `SUPABASE_SERVICE_ROLE_KEY`, que o
+middleware não usa.
+
+Detalhe do middleware: [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts)
+usa `process.env.X!`, e o `!` esconde do TypeScript que a variável pode faltar.
+Se sumir em runtime, o erro só aparece no log da Vercel (`vercel logs <url>`).
+
 ## Ambiente — atenção
 
 **Nunca mova este projeto para dentro de pastas sincronizadas pelo iCloud**
@@ -296,6 +322,7 @@ Em 04/09/2026, contra o projeto Supabase de desenvolvimento, tudo abaixo passou:
 - Responsividade limpa nas 8 larguras do §159, em Chromium real
 - Realtime propagando em 0,6s entre duas sessões simultâneas
 - lint, typecheck, 69 testes e build (18 rotas) limpos
+- Deploy em produção: 8 rotas autenticadas + realtime a 0,6s no ambiente real
 
 ## Fora de escopo no MVP
 

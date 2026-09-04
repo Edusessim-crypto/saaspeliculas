@@ -8,7 +8,7 @@
 import { chromium } from 'playwright'
 import { createClient } from '@supabase/supabase-js'
 
-const BASE = 'http://localhost:3000'
+const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -31,7 +31,9 @@ async function cookieFor(email) {
       access_token: s.access_token, token_type: 'bearer', expires_in: s.expires_in,
       expires_at: s.expires_at, refresh_token: s.refresh_token, user: s.user,
     })).toString('base64'),
-    domain: 'localhost', path: '/',
+    domain: new URL(BASE).hostname,
+    path: '/',
+    secure: BASE.startsWith('https'),
   }
 }
 
