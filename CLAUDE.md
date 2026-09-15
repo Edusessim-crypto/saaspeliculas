@@ -73,6 +73,16 @@ de uma rota `force-dynamic` (ex.: `/login`) precisa de fronteira `<Suspense>`, o
 
 ### Server Actions
 
+**Não chame `router.refresh()` depois de uma Server Action que já faz
+`revalidatePath`** — é uma segunda ida de rede redundante. Chame
+`markLocalMutation()` no clique. Sobraram apenas dois `router.refresh()`
+legítimos: `login-form` e `onboarding-wizard`, onde a sessão muda e o layout
+inteiro precisa re-renderizar.
+
+Todo caminho por botão deve atualizar a UI de forma otimista, como o
+drag-and-drop do Kanban sempre fez: aplique o estado na hora e reverta se o
+servidor recusar. Sem isso o botão fica segundos em `pending` esperando a rede.
+
 Toda Server Action passa por `authorize(permission)` de
 [src/lib/actions/shared.ts](src/lib/actions/shared.ts) antes de tocar no banco, e
 retorna `ActionResult` via `succeed()` / `fail()`. O check de permissão no
@@ -136,6 +146,17 @@ o conflito e sugere alternativas; forçar exige a permissão `orders:force_confl
 `service_orders` da organização atual e dispara `router.refresh()` com debounce de
 350ms, em vez de reconstruir o objeto composto no client. Nunca assine o banco
 inteiro.
+
+**O eco da própria mutação é ignorado.** Quem dispara uma Server Action chama
+`markLocalMutation()` de [src/lib/local-mutation.ts](src/lib/local-mutation.ts)
+*no clique, antes do await* — o evento do realtime pode chegar antes da resposta.
+Sem isso, cada clique gerava três idas ao servidor: `revalidatePath` na action,
+`router.refresh()` no cliente e o eco do realtime. A árvore era trocada no meio
+da interação, e o botão parecia não responder ao primeiro clique.
+
+`markLocalMutation` mora num módulo **sem dependências** de propósito: quando
+morava no hook de realtime, importá-lo arrastava o cliente do Supabase para
+telas que nunca usaram realtime e inflava 4 rotas em ~70kB.
 
 O cenário crítico: aplicador finaliza no celular → tela da recepção move para
 CONFERÊNCIA sem F5. Esse fluxo não pode regredir.
@@ -276,6 +297,25 @@ middleware não usa.
 Detalhe do middleware: [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts)
 usa `process.env.X!`, e o `!` esconde do TypeScript que a variável pode faltar.
 Se sumir em runtime, o erro só aparece no log da Vercel (`vercel logs <url>`).
+
+## Performance — o que medir (e o que engana)
+
+Latência de carregamento de página **não** é o gargalo percebido, e otimizá-la
+foi um beco sem saída: em produção (`gru1`, ao lado do Supabase) `/hoje` e
+`/operacao` ficam em ~1,1s, e a variação entre execuções do *mesmo* build
+(1138ms vs 1313ms) é maior que a diferença entre builds. Um A/B entre o build
+antigo e o otimizado deu +3% / -9% / +6% — ruído.
+
+**Medir latência do laptop engana.** Daqui, cada chamada ao Supabase custa
+200–550ms; do servidor na Vercel, uma fração disso. Uma otimização
+dimensionada com números locais (colapsar 4 queries de sessão em 1) não
+apareceu no relógio em produção. Se for medir, meça de dentro, ou meça
+round-trips em vez de milissegundos.
+
+O que o usuário sente é **clique**, não carregamento. As perguntas certas:
+quantas idas ao servidor um clique dispara, e em quanto tempo a tela reflete
+a ação. Foi aí que estava o problema real — três renders por clique e nenhum
+feedback otimista nos botões.
 
 ## Ambiente — atenção
 
