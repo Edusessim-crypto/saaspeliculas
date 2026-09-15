@@ -300,6 +300,14 @@ Se sumir em runtime, o erro só aparece no log da Vercel (`vercel logs <url>`).
 
 ## Performance — o que medir (e o que engana)
 
+**URLs de preview não servem para medir nada.** Só o alias
+`saaspeliculas.vercel.app` responde 200; cada deployment individual
+(`saaspeliculas-<hash>-…vercel.app`) fica atrás do Deployment Protection e
+responde 302 com cabeçalhos SSO da Vercel. Um teste com sessão injetada bate
+no muro de autenticação e devolve "botão não encontrado" — que parece bug da
+aplicação e não é. Consequência prática: não dá para fazer A/B entre o build
+antigo e o novo em produção; meça o build corrente no alias.
+
 Latência de carregamento de página **não** é o gargalo percebido, e otimizá-la
 foi um beco sem saída: em produção (`gru1`, ao lado do Supabase) `/hoje` e
 `/operacao` ficam em ~1,1s, e a variação entre execuções do *mesmo* build
