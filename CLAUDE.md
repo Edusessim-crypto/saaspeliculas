@@ -317,6 +317,22 @@ quantas idas ao servidor um clique dispara, e em quanto tempo a tela reflete
 a ação. Foi aí que estava o problema real — três renders por clique e nenhum
 feedback otimista nos botões.
 
+## Dados da demonstração
+
+O seed representa **um dia de operação**, e telas como o cronômetro do serviço
+assumem isso. Atendimentos deixados em `application`/`preparation` por dias
+viram `263:52:03` no cronômetro e `256h37` no card — a demo passa a parecer
+quebrada.
+
+Todo teste que cria atendimento precisa removê-lo no `finally`, inclusive
+`status_history`, `notifications`, `service_order_items` e
+`service_order_employees` (a FK não cascateia). Os verificadores em `scripts/`
+e `tests/e2e/` já fazem isso; testes ad-hoc esquecem, e foi o que sujou a base.
+
+Se a demo envelhecer, reancore os atendimentos ativos na data de hoje
+preservando o horário planejado, e reajuste `actual_start` para minutos
+plausíveis em vez de horas.
+
 ## Ambiente — atenção
 
 **Nunca mova este projeto para dentro de pastas sincronizadas pelo iCloud**
