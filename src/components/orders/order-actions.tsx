@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { MoreHorizontal, CalendarClock, Ban, MessageSquarePlus, UserX, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,9 +17,11 @@ import { Field } from '@/components/ui/field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { changeOrderStatus, reopenOrder } from '@/lib/actions/orders'
 import { primaryAction, canReopen, isTerminal } from '@/domain/state-machine'
+import type { OrderStatus } from '@/domain/status'
 import { CANCELLATION_REASONS } from '@/domain/defaults'
 import { can, type AppRole } from '@/domain/roles'
 import type { ServiceOrderView } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface OrderActionsProps {
   order: ServiceOrderView
@@ -42,7 +43,6 @@ export function OrderActions({
   onAddNote,
   layout = 'drawer',
 }: OrderActionsProps) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [cancelOpen, setCancelOpen] = useState(false)
   const [noShowOpen, setNoShowOpen] = useState(false)
@@ -50,13 +50,27 @@ export function OrderActions({
   const [reason, setReason] = useState<string>(CANCELLATION_REASONS[0])
   const [reasonNote, setReasonNote] = useState('')
 
-  const action = primaryAction(order.current_status, role)
-  const terminal = isTerminal(order.current_status)
+  // Status otimista: o botao reflete a acao na hora e so volta atras se o
+  // servidor recusar. Sem isso o botao ficava ~1s em "pending" esperando a
+  // rede, e o usuario clicava de novo achando que nao tinha funcionado.
+  const [optimisticStatus, setOptimisticStatus] = useState<OrderStatus | null>(null)
+  const status = optimisticStatus ?? order.current_status
+
+  // Quando o servidor confirma, a prop chega atualizada e o otimismo sai.
+  if (optimisticStatus && order.current_status === optimisticStatus) {
+    setOptimisticStatus(null)
+  }
+
+  const action = primaryAction(status, role)
+  const terminal = isTerminal(status)
 
   function advance(to: Parameters<typeof changeOrderStatus>[0] extends never ? never : string) {
+    setOptimisticStatus(to as OrderStatus)
+    markLocalMutation()
     startTransition(async () => {
       const result = await changeOrderStatus({ order_id: order.id, to })
       if (!result.ok) {
+        setOptimisticStatus(null)
         if (result.error === 'CHECKLIST_REQUIRED') {
           onChecklistRequired?.()
           toast.info('Preencha o checklist para concluir.')
@@ -66,7 +80,7 @@ export function OrderActions({
         return
       }
       toast.success(SUCCESS_MESSAGES[to] ?? 'Atendimento atualizado.')
-      router.refresh()
+      markLocalMutation()
     })
   }
 
@@ -84,7 +98,7 @@ export function OrderActions({
       }
       setCancelOpen(false)
       toast.success('Atendimento cancelado.')
-      router.refresh()
+      markLocalMutation()
     })
   }
 
@@ -121,7 +135,7 @@ export function OrderActions({
                   return
                 }
                 toast.success('Atendimento reaberto.')
-                router.refresh()
+                markLocalMutation()
               })
             }
           >
@@ -233,7 +247,7 @@ export function OrderActions({
             }
             setNoShowOpen(false)
             toast.success('Registrado como não compareceu.')
-            router.refresh()
+            markLocalMutation()
           })
         }}
       />

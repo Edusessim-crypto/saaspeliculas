@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -11,6 +10,7 @@ import { assignEmployees } from '@/lib/actions/orders'
 import { can, type AppRole } from '@/domain/roles'
 import type { Employee, ServiceOrderView } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 export function AssignEmployeesDialog({
   order,
@@ -55,7 +55,6 @@ function AssignEmployeesForm({
   role: AppRole
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [selected, setSelected] = useState<string[]>(() =>
     order.employees.map((e) => e.employee_id),
@@ -83,7 +82,7 @@ function AssignEmployeesForm({
       }
       toast.success('Aplicador atualizado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

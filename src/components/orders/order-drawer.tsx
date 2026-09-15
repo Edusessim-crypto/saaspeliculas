@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Phone, MessageCircle, Box, MapPin, Loader2, Users } from 'lucide-react'
 import {
@@ -38,6 +37,7 @@ import {
 import { totalDuration } from '@/domain/timing'
 import { can, type AppRole } from '@/domain/roles'
 import type { ServiceOrderView, Employee } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface OrderDrawerProps {
   order: ServiceOrderView | null
@@ -78,7 +78,6 @@ function OrderDrawerContent({
   employees: Employee[]
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [extras, setExtras] = useState<OrderDetailExtras | null>(null)
   const [loading, setLoading] = useState(true)
   const [showChecklist, setShowChecklist] = useState(false)
@@ -318,7 +317,7 @@ function OrderDrawerContent({
                             }
                             setEditingNote(false)
                             toast.success('Observação salva.')
-                            router.refresh()
+                            markLocalMutation()
                           })
                         }
                       >

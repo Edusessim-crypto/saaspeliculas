@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
@@ -9,6 +8,7 @@ import { saveChecklist } from '@/lib/actions/checklist'
 import { changeOrderStatus } from '@/lib/actions/orders'
 import { cn } from '@/lib/utils'
 import type { ChecklistItem, ChecklistResponse } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface ChecklistProps {
   orderId: string
@@ -29,7 +29,6 @@ export function Checklist({
   onDone,
   readOnly,
 }: ChecklistProps) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
@@ -72,7 +71,7 @@ export function Checklist({
       }
 
       onDone?.()
-      router.refresh()
+      markLocalMutation()
     })
   }
 

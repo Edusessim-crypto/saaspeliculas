@@ -22,6 +22,7 @@ import {
   formatPhone,
 } from '@/lib/format'
 import { totalDuration } from '@/domain/timing'
+import { markLocalMutation } from '@/lib/local-mutation'
 import type {
   ServiceOrderView,
   StatusHistoryEntry,
@@ -67,7 +68,7 @@ export function ApplicatorOrderView({
         return
       }
       toast.success('Serviço atualizado.')
-      router.refresh()
+      markLocalMutation()
     })
   }
 
@@ -220,7 +221,7 @@ export function ApplicatorOrderView({
                         }
                         setNoteOpen(false)
                         toast.success('Observação salva.')
-                        router.refresh()
+                        markLocalMutation()
                       })
                     }
                   >

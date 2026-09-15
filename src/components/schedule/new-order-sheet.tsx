@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { addMinutes as addMins, format } from 'date-fns'
 import { Check, ChevronRight, Clock, AlertTriangle } from 'lucide-react'
@@ -40,6 +39,7 @@ import type {
   ServiceType,
 } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface NewOrderSheetProps {
   open: boolean
@@ -97,7 +97,6 @@ function NewOrderFlow({
   defaultTime,
   defaultEmployeeId,
 }: Omit<NewOrderSheetProps, 'open'>) {
-  const router = useRouter()
   const [step, setStep] = useState<Step>('customer')
   const [catalog, setCatalog] = useState<BookingCatalog>({ serviceTypes: [], workstations: [] })
   const [submitting, startSubmit] = useTransition()
@@ -218,7 +217,7 @@ function NewOrderFlow({
 
       toast.success('Agendamento criado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

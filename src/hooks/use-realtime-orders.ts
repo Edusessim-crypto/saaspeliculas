@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { isEchoOfLocalMutation } from '@/lib/local-mutation'
 
 /**
  * Mantem a tela sincronizada com a operacao (§73, §141).
@@ -22,6 +23,12 @@ export function useRealtimeOrders(organizationId: string, enabled = true) {
     const supabase = getSupabaseBrowser()
 
     const scheduleRefresh = () => {
+      // A mutacao deste proprio usuario ja revalidou no servidor (a Server
+      // Action chama revalidatePath). Refazer aqui gastaria outra ida de
+      // rede e trocaria a arvore no meio do clique — origem do "precisei
+      // clicar duas vezes". Ignoramos a janela logo apos a acao local.
+      if (isEchoOfLocalMutation()) return
+
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => {
         router.refresh()

@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   DndContext,
@@ -23,6 +22,7 @@ import { changeOrderStatus } from '@/lib/actions/orders'
 import type { AppRole } from '@/domain/roles'
 import type { ServiceOrderView } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface KanbanBoardProps {
   orders: ServiceOrderView[]
@@ -41,7 +41,6 @@ export function KanbanBoard({
   onSelect,
   onChecklistRequired,
 }: KanbanBoardProps) {
-  const router = useRouter()
   const [dragging, setDragging] = useState<ServiceOrderView | null>(null)
   // Optimistic UI: move o card na hora e reverte se o backend recusar (§137).
   const [optimistic, setOptimistic] = useState<Record<string, OrderStatus>>({})
@@ -88,6 +87,7 @@ export function KanbanBoard({
     }
 
     setOptimistic((prev) => ({ ...prev, [order.id]: to }))
+    markLocalMutation()
 
     void changeOrderStatus({ order_id: order.id, to }).then((result) => {
       if (!result.ok) {
@@ -105,7 +105,6 @@ export function KanbanBoard({
         return
       }
       toast.success(`Movido para ${STATUS_CONFIG[to].label}.`)
-      router.refresh()
     })
   }
 

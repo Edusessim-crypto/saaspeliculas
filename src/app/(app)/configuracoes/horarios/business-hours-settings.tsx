@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { saveBusinessHours } from '@/lib/actions/settings'
 import { WEEKDAY_LABELS } from '@/domain/defaults'
 import { can, type AppRole } from '@/domain/roles'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 interface DayHours {
   weekday: number
@@ -27,7 +27,6 @@ export function BusinessHoursSettings({
   initialHours: DayHours[]
   role: AppRole
 }) {
-  const router = useRouter()
   const [hours, setHours] = useState(initialHours)
   const [pending, startTransition] = useTransition()
   const editable = can(role, 'org:settings')
@@ -132,7 +131,7 @@ export function BusinessHoursSettings({
                 return
               }
               toast.success('Horários salvos.')
-              router.refresh()
+              markLocalMutation()
             })
           }
         >

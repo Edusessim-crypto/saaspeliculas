@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -9,6 +8,7 @@ import { Input, Textarea } from '@/components/ui/input'
 import { Field } from '@/components/ui/field'
 import { createCustomer, updateCustomer } from '@/lib/actions/customers'
 import type { Customer } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 export function CustomerSheet({
   open,
@@ -43,7 +43,6 @@ function CustomerForm({
   customer: Customer | null
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({
     name: customer?.name ?? '',
@@ -72,7 +71,7 @@ function CustomerForm({
 
       toast.success(customer ? 'Cliente atualizado.' : 'Cliente cadastrado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

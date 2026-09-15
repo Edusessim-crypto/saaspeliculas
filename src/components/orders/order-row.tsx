@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Car, MapPin, Box } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -16,7 +17,7 @@ import type { ServiceOrderView } from '@/types/database'
  * Desktop: uma linha densa em grid.
  * Mobile: card estruturado — nunca uma tabela espremida (§56).
  */
-export function OrderRow({
+function OrderRowBase({
   order,
   onSelect,
   showDate,
@@ -124,6 +125,13 @@ export function OrderRow({
 }
 
 /** Cabecalho de colunas — apenas desktop, para orientar a leitura. */
+/**
+ * Memoizado: o realtime re-renderiza a lista inteira a cada evento, e
+ * so as linhas cujo atendimento mudou precisam recalcular.
+ */
+export const OrderRow = memo(OrderRowBase)
+OrderRow.displayName = 'OrderRow'
+
 export function OrderRowHeader({ className }: { className?: string }) {
   return (
     <div

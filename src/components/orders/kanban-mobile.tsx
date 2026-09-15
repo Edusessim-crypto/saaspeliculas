@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowRight } from 'lucide-react'
 import { OrderCard } from './order-card'
@@ -12,6 +11,7 @@ import { changeOrderStatus } from '@/lib/actions/orders'
 import type { AppRole } from '@/domain/roles'
 import type { ServiceOrderView } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 /**
  * Mobile: uma coluna por vez, com tabs horizontais scrollaveis.
@@ -28,8 +28,10 @@ export function KanbanMobile({
   onSelect: (order: ServiceOrderView) => void
   onChecklistRequired: (order: ServiceOrderView) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
+  // Optimistic UI: o card troca de coluna no clique e volta se o backend
+  // recusar (§137). Mesmo padrao do kanban de desktop.
+  const [optimistic, setOptimistic] = useState<Record<string, OrderStatus>>({})
   const [active, setActive] = useState<OrderStatus>(() => {
     // Abre na primeira coluna que tem algo, para nao cair em tela vazia.
     for (const status of KANBAN_COLUMNS) {
@@ -42,27 +44,37 @@ export function KanbanMobile({
     const map = new Map<OrderStatus, ServiceOrderView[]>()
     for (const status of KANBAN_COLUMNS) map.set(status, [])
     for (const order of orders) {
-      const target = order.current_status === 'arrived' ? 'waiting' : order.current_status
+      const status = optimistic[order.id] ?? order.current_status
+      const target = status === 'arrived' ? 'waiting' : status
       map.get(target as OrderStatus)?.push(order)
     }
     return map
-  }, [orders])
+  }, [orders, optimistic])
 
   const current = grouped.get(active) ?? []
 
   function advance(order: ServiceOrderView) {
-    const action = primaryAction(order.current_status, role)
+    const from = optimistic[order.id] ?? order.current_status
+    const action = primaryAction(from, role)
     if (!action) return
 
-    const check = checkTransition(order.current_status, action.to, role)
+    const check = checkTransition(from, action.to, role)
     if (!check.allowed) {
       toast.error(check.reason ?? 'Não permitido.')
       return
     }
 
+    // Move o card na hora; reverte se o servidor recusar (§137).
+    setOptimistic((prev) => ({ ...prev, [order.id]: action.to }))
+    markLocalMutation()
     startTransition(async () => {
       const result = await changeOrderStatus({ order_id: order.id, to: action.to })
       if (!result.ok) {
+        setOptimistic((prev) => {
+          const next = { ...prev }
+          delete next[order.id]
+          return next
+        })
         if (result.error === 'CHECKLIST_REQUIRED') {
           onChecklistRequired(order)
           toast.info('Preencha o checklist para concluir.')
@@ -72,7 +84,7 @@ export function KanbanMobile({
         return
       }
       toast.success(`Movido para ${STATUS_CONFIG[action.to].label}.`)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

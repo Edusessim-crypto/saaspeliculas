@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Box, Car, MapPin, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AvatarGroup } from '@/components/ui/avatar'
@@ -14,7 +15,7 @@ import type { ServiceOrderView } from '@/types/database'
  * Card do Kanban. Informacao prioritaria apenas — o resto abre no
  * drawer ao clicar (§24). Cards pequenos mantem a coluna legivel.
  */
-export function OrderCard({
+function OrderCardBase({
   order,
   onSelect,
   dragging,
@@ -119,3 +120,7 @@ export function OrderCard({
     </div>
   )
 }
+
+/** Memoizado pelo mesmo motivo de OrderRow. */
+export const OrderCard = memo(OrderCardBase)
+OrderCard.displayName = 'OrderCard'

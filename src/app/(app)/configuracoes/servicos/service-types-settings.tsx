@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus, Pencil, Layers } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -14,6 +13,7 @@ import { CATEGORY_LABELS } from '@/domain/defaults'
 import { formatDuration, formatCurrency } from '@/lib/format'
 import { can, type AppRole } from '@/domain/roles'
 import type { ServiceType, ServiceCategory } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 export function ServiceTypesSettings({
   serviceTypes,
@@ -22,7 +22,6 @@ export function ServiceTypesSettings({
   serviceTypes: ServiceType[]
   role: AppRole
 }) {
-  const router = useRouter()
   const [, startTransition] = useTransition()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<ServiceType | null>(null)
@@ -46,7 +45,7 @@ export function ServiceTypesSettings({
         return
       }
       toast.success(isActive ? 'Serviço ativado.' : 'Serviço desativado.')
-      router.refresh()
+      markLocalMutation()
     })
   }
 

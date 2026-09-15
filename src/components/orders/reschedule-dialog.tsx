@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { differenceInMinutes } from 'date-fns'
 import {
@@ -21,6 +20,7 @@ import { timeSlots } from '@/domain/defaults'
 import { toDateInput, toTimeInput, formatDateTime, formatDuration } from '@/lib/format'
 import { can, type AppRole } from '@/domain/roles'
 import type { ServiceOrderView } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 export function RescheduleDialog({
   order,
@@ -59,7 +59,6 @@ function RescheduleForm({
   role: AppRole
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [date, setDate] = useState(() => toDateInput(new Date(order.scheduled_start)))
   const [time, setTime] = useState(() => toTimeInput(new Date(order.scheduled_start)))
@@ -95,7 +94,7 @@ function RescheduleForm({
 
       toast.success('Atendimento reagendado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

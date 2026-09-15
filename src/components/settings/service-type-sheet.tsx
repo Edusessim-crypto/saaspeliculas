@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -20,6 +19,7 @@ import { saveServiceType } from '@/lib/actions/settings'
 import { CATEGORY_LABELS, IDENTITY_COLORS } from '@/domain/defaults'
 import type { ServiceType, ServiceCategory } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as ServiceCategory[]
 
@@ -55,7 +55,6 @@ function ServiceTypeForm({
   serviceType: ServiceType | null
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({
     name: serviceType?.name ?? '',
@@ -88,7 +87,7 @@ function ServiceTypeForm({
 
       toast.success(serviceType ? 'Serviço atualizado.' : 'Serviço cadastrado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

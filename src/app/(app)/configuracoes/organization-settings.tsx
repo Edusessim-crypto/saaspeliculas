@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { updateOrganization } from '@/lib/actions/settings'
 import { can, type AppRole } from '@/domain/roles'
 import type { Organization } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 const PLAN_LABELS = { starter: 'Starter', pro: 'Pro', business: 'Business' } as const
 
@@ -25,7 +25,6 @@ export function OrganizationSettings({
   memberCount: number
   role: AppRole
 }) {
-  const router = useRouter()
   const [name, setName] = useState(organization.name)
   const [pending, startTransition] = useTransition()
   const editable = can(role, 'org:settings')
@@ -60,7 +59,7 @@ export function OrganizationSettings({
                     return
                   }
                   toast.success('Empresa atualizada.')
-                  router.refresh()
+                  markLocalMutation()
                 })
               }
             >

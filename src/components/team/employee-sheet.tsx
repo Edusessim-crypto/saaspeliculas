@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -24,6 +23,7 @@ import { ROLE_LABELS } from '@/domain/roles'
 import type { AppRole } from '@/domain/roles'
 import type { Employee } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 const ASSIGNABLE_ROLES: AppRole[] = ['manager', 'reception', 'applicator']
 
@@ -64,7 +64,6 @@ function EmployeeForm({
   initialSpecialties: string[]
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({
     full_name: employee?.full_name ?? '',
@@ -97,7 +96,7 @@ function EmployeeForm({
 
       toast.success(employee ? 'Colaborador atualizado.' : 'Colaborador cadastrado.')
       onOpenChange(false)
-      router.refresh()
+      markLocalMutation()
     })
   }
 

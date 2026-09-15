@@ -14,6 +14,7 @@ import { changeOrderStatus } from '@/lib/actions/orders'
 import { primaryAction } from '@/domain/state-machine'
 import { formatTime, formatTimeRange, formatPlate, formatVehicle } from '@/lib/format'
 import type { ServiceOrderView } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 /**
  * Home do aplicador. Um card grande para o "agora", uma lista simples
@@ -54,7 +55,7 @@ export function ApplicatorHome({
         return
       }
       toast.success(action.to === 'application' ? 'Serviço iniciado.' : 'Preparação iniciada.')
-      router.refresh()
+      markLocalMutation()
     })
   }
 

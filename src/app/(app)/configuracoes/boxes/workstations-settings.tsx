@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus, Pencil, Box } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -15,6 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetBody, SheetFooter } from '@/comp
 import { saveWorkstation, setWorkstationActive } from '@/lib/actions/settings'
 import { can, type AppRole } from '@/domain/roles'
 import type { Workstation } from '@/types/database'
+import { markLocalMutation } from '@/lib/local-mutation'
 
 export function WorkstationsSettings({
   workstations,
@@ -23,7 +23,6 @@ export function WorkstationsSettings({
   workstations: Workstation[]
   role: AppRole
 }) {
-  const router = useRouter()
   const [, startTransition] = useTransition()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Workstation | null>(null)
@@ -96,7 +95,7 @@ export function WorkstationsSettings({
                             return
                           }
                           toast.success(value ? 'Box ativado.' : 'Box desativado.')
-                          router.refresh()
+                          markLocalMutation()
                         })
                       }
                     />
@@ -156,7 +155,6 @@ function WorkstationForm({
   workstation: Workstation | null
   onOpenChange: (open: boolean) => void
 }) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [form, setForm] = useState({
     name: workstation?.name ?? '',
@@ -225,7 +223,7 @@ function WorkstationForm({
                 }
                 toast.success(workstation ? 'Box atualizado.' : 'Box cadastrado.')
                 onOpenChange(false)
-                router.refresh()
+                markLocalMutation()
               })
             }
           >
