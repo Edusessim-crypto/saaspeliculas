@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { relativeTime } from '@/lib/format'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { DEMO_MODE } from '@/lib/demo'
 import { markAllNotificationsRead, markNotificationRead } from '@/lib/actions/notifications'
 import type { AppNotification } from '@/types/database'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ export function NotificationPopover({
 
   // Assina apenas as notificacoes desta organizacao (§136).
   useEffect(() => {
+    if (DEMO_MODE) return
     const supabase = getSupabaseBrowser()
     const channel = supabase
       .channel(`notifications:${organizationId}`)

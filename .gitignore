@@ -15,3 +15,6 @@ coverage
 # Histórico de sessão migrado do Desktop — não versionar
 sessao-antiga.jsonl
 .env*
+
+# lixo do CLI do Supabase
+supabase/.temp

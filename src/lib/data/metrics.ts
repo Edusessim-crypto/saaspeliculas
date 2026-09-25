@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_MODE } from '@/lib/demo'
+import { demoOrders } from '@/lib/demo/data'
 import { executionMinutes, calculateDelay } from '@/domain/timing'
 import type { OrderStatus } from '@/domain/status'
 
@@ -33,6 +35,28 @@ export async function getEmployeeStats(
   from: Date,
   to: Date,
 ): Promise<Map<string, EmployeeStats>> {
+  if (DEMO_MODE) {
+    const stats = new Map<string, EmployeeStats>()
+    for (const order of demoOrders) {
+      const start = new Date(order.scheduled_start)
+      if (start < from || start > to) continue
+      for (const e of order.employees) {
+        const cur = stats.get(e.employee_id) ?? {
+          employeeId: e.employee_id, total: 0, completed: 0, inProgress: 0,
+          productiveMinutes: 0, averageMinutes: null, delayed: 0,
+        }
+        cur.total += 1
+        if (['ready', 'delivered'].includes(order.current_status)) cur.completed += 1
+        if (['preparation', 'application'].includes(order.current_status)) cur.inProgress += 1
+        cur.productiveMinutes += executionMinutes(order) ?? 0
+        if (calculateDelay(order).isDelayed) cur.delayed += 1
+        cur.averageMinutes = cur.completed ? Math.round(cur.productiveMinutes / cur.completed) : null
+        stats.set(e.employee_id, cur)
+      }
+    }
+    return stats
+  }
+
   const supabase = await createClient()
 
   const { data } = await supabase
@@ -118,6 +142,55 @@ export async function getDashboardMetrics(
   to: Date,
   capacityMinutesPerDay: number,
 ): Promise<DashboardMetrics> {
+  if (DEMO_MODE) {
+    const inRange = demoOrders.filter((o) => {
+      const d = new Date(o.scheduled_start)
+      return d >= from && d <= to
+    })
+    const completed = inRange.filter((o) => ['ready', 'delivered'].includes(o.current_status))
+    const minutes = completed.map((o) => executionMinutes(o) ?? 0).filter(Boolean)
+    const plannedMinutes = inRange.reduce(
+      (sum, o) => sum + o.items.reduce((s2, i) => s2 + i.duration_minutes * i.quantity, 0),
+      0,
+    )
+    const days = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / 86_400_000))
+
+    const byDay = new Map<string, { completed: number; scheduled: number }>()
+    for (const o of inRange) {
+      const key = o.scheduled_start.slice(0, 10)
+      const cur = byDay.get(key) ?? { completed: 0, scheduled: 0 }
+      cur.scheduled += 1
+      if (['ready', 'delivered'].includes(o.current_status)) cur.completed += 1
+      byDay.set(key, cur)
+    }
+
+    const byCategory = new Map<string, { minutes: number; count: number }>()
+    for (const o of inRange) {
+      for (const item of o.items) {
+        const cur = byCategory.get(item.name_snapshot) ?? { minutes: 0, count: 0 }
+        cur.minutes += item.duration_minutes * item.quantity
+        cur.count += item.quantity
+        byCategory.set(item.name_snapshot, cur)
+      }
+    }
+
+    return {
+      completed: completed.length,
+      cancelled: demoOrders.filter((o) => o.current_status === 'cancelled').length,
+      delayed: inRange.filter((o) => calculateDelay(o).isDelayed).length,
+      averageExecutionMinutes: minutes.length
+        ? Math.round(minutes.reduce((a, b) => a + b, 0) / minutes.length)
+        : null,
+      occupancyRate: Math.min(1, plannedMinutes / (capacityMinutesPerDay * days)),
+      byDay: [...byDay.entries()]
+        .map(([date, v]) => ({ date, ...v }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+      byCategory: [...byCategory.entries()]
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => b.minutes - a.minutes),
+    }
+  }
+
   const supabase = await createClient()
 
   const { data } = await supabase

@@ -1,5 +1,10 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_MODE } from '@/lib/demo'
+import {
+  demoEmployees, demoServiceTypes, demoWorkstations, demoBusinessHours,
+  demoCustomers, demoVehicles, demoOrders,
+} from '@/lib/demo/data'
 import type {
   Employee,
   ServiceType,
@@ -18,6 +23,8 @@ import type {
 
 export const getEmployees = cache(
   async (organizationId: string, onlyActive = true): Promise<Employee[]> => {
+    if (DEMO_MODE) return demoEmployees.filter((e) => !onlyActive || e.is_active)
+
     const supabase = await createClient()
     let query = supabase
       .from('employees')
@@ -37,6 +44,8 @@ export const getApplicators = cache(async (organizationId: string): Promise<Empl
 
 export const getServiceTypes = cache(
   async (organizationId: string, onlyActive = true): Promise<ServiceType[]> => {
+    if (DEMO_MODE) return demoServiceTypes.filter((t) => !onlyActive || t.is_active)
+
     const supabase = await createClient()
     let query = supabase
       .from('service_types')
@@ -52,6 +61,8 @@ export const getServiceTypes = cache(
 
 export const getWorkstations = cache(
   async (organizationId: string, onlyActive = true): Promise<Workstation[]> => {
+    if (DEMO_MODE) return demoWorkstations.filter((w) => !onlyActive || w.is_active)
+
     const supabase = await createClient()
     let query = supabase
       .from('workstations')
@@ -67,6 +78,8 @@ export const getWorkstations = cache(
 
 export const getBusinessHours = cache(
   async (organizationId: string): Promise<BusinessHours[]> => {
+    if (DEMO_MODE) return demoBusinessHours
+
     const supabase = await createClient()
     const { data } = await supabase
       .from('business_hours')
@@ -78,6 +91,13 @@ export const getBusinessHours = cache(
 )
 
 export async function getCustomers(organizationId: string, search?: string) {
+  if (DEMO_MODE) {
+    const term = search?.trim().toLowerCase()
+    return demoCustomers.filter(
+      (c) => !term || c.name.toLowerCase().includes(term) || (c.phone ?? '').includes(term),
+    )
+  }
+
   const supabase = await createClient()
   let query = supabase
     .from('customers')
@@ -96,12 +116,16 @@ export async function getCustomers(organizationId: string, search?: string) {
 }
 
 export async function getCustomerById(id: string) {
+  if (DEMO_MODE) return demoCustomers.find((c) => c.id === id) ?? null
+
   const supabase = await createClient()
   const { data } = await supabase.from('customers').select('*').eq('id', id).maybeSingle()
   return data as Customer | null
 }
 
 export async function getVehiclesByCustomer(customerId: string) {
+  if (DEMO_MODE) return demoVehicles.filter((v) => v.customer_id === customerId)
+
   const supabase = await createClient()
   const { data } = await supabase
     .from('vehicles')
@@ -112,6 +136,11 @@ export async function getVehiclesByCustomer(customerId: string) {
 }
 
 export async function getEmployeeById(id: string) {
+  if (DEMO_MODE) {
+    const found = demoEmployees.find((e) => e.id === id)
+    return found ? { ...found, specialties: [] as { specialty: string }[] } : null
+  }
+
   const supabase = await createClient()
   const { data } = await supabase
     .from('employees')
@@ -122,6 +151,10 @@ export async function getEmployeeById(id: string) {
 }
 
 export async function getChecklistForOrder(organizationId: string, orderId: string) {
+  if (DEMO_MODE) {
+    return { template: null, responses: [] }
+  }
+
   const supabase = await createClient()
 
   const { data: template } = await supabase
@@ -147,6 +180,24 @@ export async function getChecklistForOrder(organizationId: string, orderId: stri
 
 /** Lista de clientes com dados agregados para a tabela /clientes. */
 export async function getCustomersWithStats(organizationId: string) {
+  if (DEMO_MODE) {
+    return demoCustomers.map((c) => {
+      const orders = demoOrders.filter(
+        (o) => o.customer_id === c.id && o.current_status !== 'cancelled',
+      )
+      const vehicles = demoVehicles
+        .filter((v) => v.customer_id === c.id)
+        .map((v) => ({ id: v.id, brand: v.brand, model: v.model, year: v.year, plate: v.plate }))
+      return {
+        ...c,
+        vehicles,
+        lastVehicle: vehicles[0] ?? null,
+        totalOrders: orders.length,
+        lastOrderAt: orders.map((o) => o.scheduled_start).sort().at(-1) ?? null,
+      }
+    })
+  }
+
   const supabase = await createClient()
 
   const { data: customers } = await supabase

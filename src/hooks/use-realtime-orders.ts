@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
 import { isEchoOfLocalMutation } from '@/lib/local-mutation'
+import { DEMO_MODE } from '@/lib/demo'
 
 /**
  * Mantem a tela sincronizada com a operacao (§73, §141).
@@ -19,7 +20,9 @@ export function useRealtimeOrders(organizationId: string, enabled = true) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
+    // Sem banco no modo demonstracao nao ha o que assinar; tentar conectar
+    // so gera erro de WebSocket no console.
+    if (!enabled || DEMO_MODE) return
     const supabase = getSupabaseBrowser()
 
     const scheduleRefresh = () => {

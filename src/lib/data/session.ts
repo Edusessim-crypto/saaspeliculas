@@ -1,6 +1,10 @@
 import { cache } from 'react'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_MODE, DEMO_ROLE_COOKIE } from '@/lib/demo'
+import { demoSession } from '@/lib/demo/data'
+import { APP_ROLES } from '@/domain/roles'
 import type { SessionContext, Profile, Organization } from '@/types/database'
 import type { AppRole } from '@/domain/roles'
 
@@ -15,6 +19,12 @@ import type { AppRole } from '@/domain/roles'
  * passa por aqui, era o maior custo fixo do produto.
  */
 export const getSessionContext = cache(async (): Promise<SessionContext | null> => {
+  if (DEMO_MODE) {
+    const stored = (await cookies()).get(DEMO_ROLE_COOKIE)?.value
+    const role = APP_ROLES.find((r) => r === stored)
+    return role ? demoSession(role) : null
+  }
+
   const supabase = await createClient()
 
   const {
@@ -77,6 +87,12 @@ export async function requireSession(): Promise<SessionContext> {
 
 /** Igual a requireSession, mas nao força o onboarding (usado na propria tela). */
 export async function requireUser() {
+  if (DEMO_MODE) {
+    const session = await getSessionContext()
+    if (!session) redirect('/login')
+    return { id: session.userId, email: session.profile.email }
+  }
+
   const supabase = await createClient()
   const {
     data: { user },

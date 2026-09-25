@@ -1,10 +1,13 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { fail, succeed, type ActionResult } from './shared'
+import { DEMO_MODE, DEMO_ROLE_COOKIE } from '@/lib/demo'
+import { DEMO_USERS } from '@/lib/demo/data'
 
 const credentialsSchema = z.object({
   email: z.string().trim().email('Informe um e-mail válido'),
@@ -14,6 +17,23 @@ const credentialsSchema = z.object({
 export async function signIn(raw: unknown): Promise<ActionResult<{ next: string }>> {
   const parsed = credentialsSchema.safeParse(raw)
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Dados inválidos.')
+
+  // Modo demonstracao: valida contra a lista fixa e guarda o papel num
+  // cookie. Nao ha banco nem Auth — ver src/lib/demo.
+  if (DEMO_MODE) {
+    const user = DEMO_USERS.find((u) => u.email === parsed.data.email.toLowerCase())
+    if (!user || parsed.data.password !== 'filmflow123') {
+      return fail('E-mail ou senha incorretos.')
+    }
+    ;(await cookies()).set(DEMO_ROLE_COOKIE, user.role, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 12,
+    })
+    revalidatePath('/', 'layout')
+    return succeed({ next: user.role === 'applicator' ? '/app' : '/hoje' })
+  }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword(parsed.data)
@@ -53,6 +73,12 @@ export async function signIn(raw: unknown): Promise<ActionResult<{ next: string 
 }
 
 export async function signOut() {
+  if (DEMO_MODE) {
+    ;(await cookies()).delete(DEMO_ROLE_COOKIE)
+    revalidatePath('/', 'layout')
+    redirect('/login')
+  }
+
   const supabase = await createClient()
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')

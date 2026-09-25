@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_MODE } from '@/lib/demo'
+import { demoOrders, demoHistoryFor } from '@/lib/demo/data'
 import type { ServiceOrderView } from '@/types/database'
 import type { OrderStatus } from '@/domain/status'
 
@@ -74,6 +76,18 @@ export async function getOrdersInRange({
   employeeId,
   statuses,
 }: OrderRangeParams): Promise<ServiceOrderView[]> {
+  if (DEMO_MODE) {
+    return demoOrders
+      .filter((o) => {
+        const start = new Date(o.scheduled_start)
+        if (start < from || start > to) return false
+        if (statuses?.length && !statuses.includes(o.current_status)) return false
+        if (employeeId && !o.employees.some((e) => e.employee_id === employeeId)) return false
+        return true
+      })
+      .sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start))
+  }
+
   const supabase = await createClient()
 
   let query = supabase
@@ -99,6 +113,14 @@ export async function getActiveOrders(
   organizationId: string,
   employeeId?: string | null,
 ): Promise<ServiceOrderView[]> {
+  if (DEMO_MODE) {
+    const running: OrderStatus[] = ['arrived', 'waiting', 'preparation', 'application', 'inspection', 'ready']
+    return demoOrders
+      .filter((o) => running.includes(o.current_status))
+      .filter((o) => !employeeId || o.employees.some((e) => e.employee_id === employeeId))
+      .sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start))
+  }
+
   const supabase = await createClient()
   const active: OrderStatus[] = [
     'arrived',
@@ -124,6 +146,8 @@ export async function getActiveOrders(
 }
 
 export async function getOrderById(id: string): Promise<ServiceOrderView | null> {
+  if (DEMO_MODE) return demoOrders.find((o) => o.id === id) ?? null
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('service_orders')
@@ -137,6 +161,8 @@ export async function getOrderById(id: string): Promise<ServiceOrderView | null>
 }
 
 export async function getOrderHistory(orderId: string) {
+  if (DEMO_MODE) return demoHistoryFor(orderId)
+
   const supabase = await createClient()
   const { data } = await supabase
     .from('status_history')
@@ -147,6 +173,8 @@ export async function getOrderHistory(orderId: string) {
 }
 
 export async function getOrdersByCustomer(customerId: string) {
+  if (DEMO_MODE) return demoOrders.filter((o) => o.customer_id === customerId)
+
   const supabase = await createClient()
   const { data } = await supabase
     .from('service_orders')
